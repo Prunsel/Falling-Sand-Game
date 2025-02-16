@@ -231,6 +231,9 @@ end -----------------------------------------------------------------------
 -- Update grid
 function grid_update()
 
+    -- Reset camera
+    camera.x, camera.y = 0, 0
+
     -- Uncheck all cells
     for x = 1, window_width / cell_size do
         for y = 1, window_height / cell_size do
@@ -364,7 +367,7 @@ function liquid(cell)
     
     if corrodeCheck(cell, down) then -- Corroding
         replaceCells(cell, down, cell.properties.gas)
-
+        screen_shake(1)
     elseif cell.properties.density > down.properties.density and down.properties.physics ~= "static" and not down.checked then -- Falling
         swapCells(cell, down)
 
@@ -375,8 +378,8 @@ function liquid(cell)
         if goLeft == 1 then -- Left
 
             if corrodeCheck(cell, left) then
-                replaceCells(cell, left)
-                
+                replaceCells(cell, left, cell.properties.gas)
+                screen_shake(1)
             elseif cell.properties.density > left.properties.density and not left.checked then
                 swapCells(cell, left)
                 
@@ -386,8 +389,8 @@ function liquid(cell)
         elseif goLeft == 0 then -- Right
             
             if corrodeCheck(cell, right) then
-                replaceCells(cell, right)
-                
+                replaceCells(cell, right, cell.properties.gas)
+                screen_shake(1)
             elseif cell.properties.density > right.properties.density and not right.checked then
                 swapCells(cell, right)
                 
@@ -407,7 +410,7 @@ function gas(cell)
 
     if corrodeCheck(cell, up) then -- Corroding
         replaceCells(cell, up)
-
+        screen_shake(1)
     elseif cell.properties.density < up.properties.density and up.properties.physics ~= "static" and not up.checked then -- Rising
         swapCells(cell, up)
 
@@ -419,7 +422,7 @@ function gas(cell)
 
             if corrodeCheck(cell, left) then
                 replaceCells(cell, left)
-                
+                screen_shake(1)
             elseif cell.properties.density < left.properties.density and left.properties.name == "empty" then
                 swapCells(cell, left)
                 
@@ -429,7 +432,7 @@ function gas(cell)
             
             if corrodeCheck(cell, right) then
                 replaceCells(cell, right)
-                
+                screen_shake(1)
             elseif cell.properties.density < right.properties.density and right.properties.name == "empty" then
                 swapCells(cell, right)
                 
