@@ -50,11 +50,11 @@ function love.load()
         indestructible = {name  = "indestructible", colour = {r = 0.2, g = 0.2, b = 0.2}, physics = "static", density = 9, corrosive_res = 1},
         wall = {name  = "wall", colour = {r = 0.1, g= 0.1, b= 0.1}, physics = "static", density = 8, corrosive_res = 1},
         sand = {name  = "sand", colour = {r = 1, g = 0.9, b = 0.5, a = 1}, noise = true, physics = "powder", density = 1, corrosive_res = 0.2, integrity = 0.3},
-        water = {name = "water", colour = {r = 0.15, g = 0.7, b = 0.8, a = 0.5}, physics = "liquid", density = 0.5, corrosive_res = 0.1},
-        acid = {name = "acid", colour = {r = 0, g = 0.8, b = 0, a = 0.5}, bloom = true, physics = "liquid", density = 0.4, corrosive_res = 1, corrosiveness = 0.4, gas = "acid_gas"},
-        acid_gas = {name = "acid_gas", colour = {r = 0, g = 0.8, b = 0, a = 0.1}, physics = "gas", density = 0.1, corrosive_res = 1, corrosiveness = 0.4, liquid = "acid"},
-        soil = {name = "soil", colour = {r = 0.5, g = 0.3, b = 0.1, a = 1}, noise = true, physics = "powder", density = 1.2, corrosive_res = 0.2, integrity = 0.5},
-        stone = {name = "stone", colour = {r = 0.3, g = 0.3, b = 0.3, a = 1}, noise = true, physics = "static", density = 2, corrosive_res = 0.7}
+        water = {name = "water", colour = {r = 0.15, g = 0.7, b = 0.8, a = 0.3}, physics = "liquid", density = 0.5, corrosive_res = 0.1},
+        acid = {name = "acid", colour = {r = 0, g = 0.8, b = 0, a = 0.4}, bloom = true, physics = "liquid", density = 0.4, corrosive_res = 1, corrosiveness = 0.4, gas = "acid_gas"},
+        acid_gas = {name = "acid_gas", colour = {r = 0, g = 0.8, b = 0, a = 0.1}, physics = "gas", density = 0.1, corrosive_res = 1, corrosiveness = 0.4, liquid = "acid", condense_time = 600},
+        soil = {name = "soil", colour = {r = 0.45, g = 0.25, b = 0, a = 1}, noise = true, physics = "powder", density = 1.2, corrosive_res = 0.2, integrity = 0.5},
+        stone = {name = "stone", colour = {r = 0.3, g = 0.3, b = 0.3, a = 1}, noise = true, physics = "static", density = 2, corrosive_res = 0.35}
     }
 
     -- Initalize grid
@@ -241,7 +241,7 @@ function grid_update()
             -- Get current cell
             this_cell = grid[x][y]
 
-            -- Get cell neighbours
+            -- Get cell neighboursx
             if this_cell.properties.name ~= "wall" or this_cell.checked then    
                 down = grid[x][y + 1]
                 down_left = grid[x - 1][y + 1]
@@ -324,10 +324,13 @@ function cellUpdate(cell)
 
     if cell.properties.physics == "powder" then
         powder(cell)
+        cell.lifetime = cell.lifetime + 1
     elseif cell.properties.physics == "liquid" then
         liquid(cell)
+        cell.lifetime = cell.lifetime + 1
     elseif cell.properties.physics == "gas" then
         gas(cell)
+        cell.lifetime = cell.lifetime + 1
     end
 
 end ----------------------------------------------------------------------------------------------
@@ -390,7 +393,7 @@ function liquid(cell)
         end
 
     end
-    
+
 end ---------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -401,7 +404,7 @@ function gas(cell)
     if corrodeCheck(cell, up) then -- Corroding
         replaceCells(cell, up)
 
-    elseif cell.properties.density < up.properties.density and up.properties.physics ~= "static" then -- Rising
+    elseif cell.properties.density < up.properties.density and up.properties.physics ~= "static" and not up.checked then -- Rising
         swapCells(cell, up)
 
     else -- Moving left and right
@@ -432,17 +435,31 @@ function gas(cell)
 
     end
 
+    -- Condensing
+    if cell.properties.condense_time and cell.lifetime >= cell.properties.condense_time then
+        setCell(cell, cell.properties.liquid)
+    end
+
 end ---------------------------------------------------------------------------------------------------------------------------------
 
 
 
 -- Corrosion check
 function corrodeCheck(cell, cell2)
-    if cell.properties.corrosiveness and love.math.random(0, 1) < cell.properties.corrosiveness - cell2.properties.corrosive_res then
+    if cell.properties.corrosiveness and love.math.random(0, 100) < (cell.properties.corrosiveness * 100) - (cell2.properties.corrosive_res * 100) then
         return true
     else
         return false
     end
+end
+
+
+
+-- Set cell
+function setCell(cell, element_name)
+    cell.properties = element[element_name]
+    cell.checked = true
+    cell.lifetime = 0
 end
 
 
@@ -453,8 +470,11 @@ function swapCells(cell1, cell2)
 
     cell2.properties = cell1.properties
     cell2.checked = true
+    cell2.lifetime = cell1.lifetime
     cell1.properties = new_properties
     cell1.checked = true
+    cell1.lifetime = cell2.lifetime
+    
 end
 
 
@@ -467,8 +487,10 @@ function replaceCells(cell1, cell2, byproduct)
     cell2.checked = true
     if byproduct then
         cell1.properties = element[byproduct]
+        cell1.lifetime = 0
     else
         cell1.properties = element.empty
+        cell1.lifetime = 0
     end
     cell1.checked = true
 end
