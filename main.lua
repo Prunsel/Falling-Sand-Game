@@ -52,10 +52,10 @@ function love.load()
         sand = {name  = "sand", colour = {r = 1, g = 0.9, b = 0.5, a = 1}, noise = true, physics = "powder", density = 1, corrosive_res = 0.2, integrity = 0.3},
         water = {name = "water", colour = {r = 0.15, g = 0.7, b = 0.8, a = 0.3}, physics = "liquid", density = 0.5, corrosive_res = 0.1, gas = "steam"},
         steam = {name = "steam", colour = {r = 0.15, g = 0.7, b = 0.8, a = 0.1}, physics = "gas", density = 0.1, corrosive_res = 0.1, liquid = "water", condense_time = 300},
-        acid = {name = "acid", colour = {r = 0, g = 0.8, b = 0, a = 0.4}, bloom = true, physics = "liquid", density = 0.4, corrosive_res = 1, corrosiveness = 0.4, gas = "acid_gas"},
+        acid = {name = "acid", colour = {r = 0, g = 0.8, b = 0, a = 0.4}, physics = "liquid", density = 0.4, corrosive_res = 1, corrosiveness = 0.4, gas = "acid_gas"},
         acid_gas = {name = "acid_gas", colour = {r = 0, g = 0.8, b = 0, a = 0.1}, physics = "gas", density = 0.1, corrosive_res = 1, corrosiveness = 0.4, liquid = "acid", condense_time = 600},
         soil = {name = "soil", colour = {r = 0.45, g = 0.25, b = 0, a = 1}, noise = true, physics = "powder", density = 1.2, corrosive_res = 0.2, integrity = 0.5},
-        stone = {name = "stone", colour = {r = 0.3, g = 0.3, b = 0.3, a = 1}, noise = true, physics = "static", density = 2, corrosive_res = 0.35}
+        stone = {name = "stone", colour = {r = 0.3, g = 0.3, b = 0.3, a = 1}, noise = true, physics = "static", density = 10, corrosive_res = 0.35}
     }
 
     -- Initalize grid
@@ -344,7 +344,7 @@ end ----------------------------------------------------------------------------
 -- Powder behaviour
 function powder(cell)
 
-    if cell.properties.density > down.properties.density and down.checked == false then
+    if cell.properties.density > down.properties.density and down.checked == false and down.properties.physics ~= "static" then
         swapCells(cell, down) -- Falling
 
     elseif love.math.random(0, 100) > cell.properties.integrity * 100 and cell.isFalling and cell.properties.density > down_left.properties.density and cell.properties.density > left.properties.density then
@@ -363,9 +363,9 @@ end ----------------------------------------------------------------------------
 function liquid(cell)
     
     if corrodeCheck(cell, down) then -- Corroding
-        replaceCells(down, cell, cell.properties.gas)
+        replaceCells(cell, down, cell.properties.gas)
 
-    elseif cell.properties.density > down.properties.density and not down.checked then -- Falling
+    elseif cell.properties.density > down.properties.density and down.properties.physics ~= "static" and not down.checked then -- Falling
         swapCells(cell, down)
 
     else -- Moving left and right
@@ -377,7 +377,7 @@ function liquid(cell)
             if corrodeCheck(cell, left) then
                 replaceCells(cell, left)
                 
-            elseif cell.properties.density > left.properties.density and left.properties.name == "empty" and not left.checked then
+            elseif cell.properties.density > left.properties.density and not left.checked then
                 swapCells(cell, left)
                 
             end
@@ -388,7 +388,7 @@ function liquid(cell)
             if corrodeCheck(cell, right) then
                 replaceCells(cell, right)
                 
-            elseif cell.properties.density > right.properties.density and right.properties.name == "empty" and not right.checked then
+            elseif cell.properties.density > right.properties.density and not right.checked then
                 swapCells(cell, right)
                 
             end
@@ -487,7 +487,8 @@ end
 function replaceCells(cell1, cell2, byproduct)
     local new_properties = cell2.properties
 
-    cell2.properties = cell1.properties
+    cell2.properties = element.empty
+    cell2.lifetime = 0
     cell2.checked = true
     if byproduct then
         cell1.properties = element[byproduct]
