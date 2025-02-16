@@ -16,7 +16,7 @@ love.graphics.setDefaultFilter("nearest", "nearest")
 function love.load()
 
     -- Set window dimensions
-    --love.window.setMode(600, 400)
+    love.window.setMode(600, 400)
 
     -- Get window dimensions
     window_width, window_height = love.window.getMode()
@@ -42,7 +42,7 @@ function love.load()
 
     -- Grid of cells
     grid = {}
-    cell_size = 6
+    cell_size = 8
     
     -- Elements
     element = {
