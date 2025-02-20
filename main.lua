@@ -24,9 +24,10 @@ function love.load()
     -- Get window dimensions
     window_width, window_height = love.window.getMode()
 
-    -- Get font
+    -- Get fonts
+    font = love.graphics.newFont("assets/fonts/Quicksand-Regular.ttf")
     crimson = love.graphics.newFont("assets/fonts/CrimsonText-Bold.ttf")
-    love.graphics.setFont(crimson)
+    love.graphics.setFont(font)
 
     -- Camera table
     camera = {
