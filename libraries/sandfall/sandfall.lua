@@ -4,23 +4,27 @@ sandfall = {}
 
 -- Load grid and variables
 function grid_init()
+
+    -- Get window dimensions
+    window_width, window_height = love.window.getMode()
+    
     -- Grid of cells
     grid = {}
     cell_size = 8
     
     -- Elements
-    element = {
-        empty = require "elements.other.empty",
-        indestructible = {name  = "indestructible", colour = {r = 0.2, g = 0.2, b = 0.2}, physics = "static", density = 9, corrosive_res = 1},
-        wall = require "elements.other.wall",
-        sand = require "elements/powders/sand",
-        water = {name = "water", colour = {r = 0.15, g = 0.7, b = 0.8, a = 0.3}, physics = "liquid", density = 0.5, corrosive_res = 0.1, gas = "steam"},
-        steam = {name = "steam", colour = {r = 0.15, g = 0.7, b = 0.8, a = 0.1}, physics = "gas", density = 0.1, corrosive_res = 0.1, liquid = "water", condense_time = 5000},
-        acid = {name = "acid", colour = {r = 0, g = 0.8, b = 0, a = 0.4}, physics = "liquid", density = 0.4, corrosive_res = 1, corrosiveness = 0.4, gas = "acid_gas"},
-        acid_gas = {name = "acid_gas", colour = {r = 0, g = 0.8, b = 0, a = 0.1}, physics = "gas", density = 0.1, corrosive_res = 1, corrosiveness = 0.4, liquid = "acid", condense_time = 6000},
-        soil = {name = "soil", colour = {r = 0.45, g = 0.25, b = 0, a = 1}, noise = true, physics = "powder", density = 1.2, corrosive_res = 0.2, integrity = 0.5},
-        stone = {name = "stone", colour = {r = 0.3, g = 0.3, b = 0.3, a = 1}, noise = true, physics = "static", density = 10, corrosive_res = 0.35, liquid = "lava"},
-	    lava = {name = "lava", colour = {r = 1, g = 0.4, b = 0, a = 1}, physics = "liquid", density = 4, corrosive_res = 10, corrosiveness = 0.02, solid = "stone", solidify_time = 600}
+    element = { -- Add elements here  \/ Filepaths \/ 
+        empty = require "libraries.sandfall.elements.other.empty",
+        wall = require "libraries.sandfall.elements.other.wall",
+        sand = require "libraries.sandfall.elements.powders.sand",
+        --indestructible = {name  = "indestructible", colour = {r = 0.2, g = 0.2, b = 0.2}, physics = "static", density = 9, corrosive_res = 1},
+        --water = {name = "water", colour = {r = 0.15, g = 0.7, b = 0.8, a = 0.3}, physics = "liquid", density = 0.5, corrosive_res = 0.1, gas = "steam"},
+        --steam = {name = "steam", colour = {r = 0.15, g = 0.7, b = 0.8, a = 0.1}, physics = "gas", density = 0.1, corrosive_res = 0.1, liquid = "water", condense_time = 5000},
+        --acid = {name = "acid", colour = {r = 0, g = 0.8, b = 0, a = 0.4}, physics = "liquid", density = 0.4, corrosive_res = 1, corrosiveness = 0.4, gas = "acid_gas"},
+        --acid_gas = {name = "acid_gas", colour = {r = 0, g = 0.8, b = 0, a = 0.1}, physics = "gas", density = 0.1, corrosive_res = 1, corrosiveness = 0.4, liquid = "acid", condense_time = 6000},
+        --soil = {name = "soil", colour = {r = 0.45, g = 0.25, b = 0, a = 1}, noise = true, physics = "powder", density = 1.2, corrosive_res = 0.2, integrity = 0.5},
+        --stone = {name = "stone", colour = {r = 0.3, g = 0.3, b = 0.3, a = 1}, noise = true, physics = "static", density = 10, corrosive_res = 0.35, liquid = "lava"},
+	    --lava = {name = "lava", colour = {r = 1, g = 0.4, b = 0, a = 1}, physics = "liquid", density = 4, corrosive_res = 10, corrosiveness = 0.02, solid = "stone", solidify_time = 600}
     }
 
     -- Initalize grid
@@ -412,5 +416,11 @@ function isNearMouse(x, y)
         return false
     end
 end
+
+-- Calculate distance between two positions
+function distance(x1, y1, x2, y2)
+    return math.sqrt((x2 - x1) ^ 2 + (y2 - y1) ^ 2)
+end
+
 
 return sand

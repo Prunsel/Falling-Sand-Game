@@ -6,7 +6,7 @@ anim8 = require "libraries.anim8"
 moonshine = require "libraries.moonshine"
 
 -- Require scripts
-sandfall = require "scripts.sandfall"
+sandfall = require "libraries.sandfall.sandfall"
 
 -- Removes sprite blur
 love.graphics.setDefaultFilter("nearest", "nearest")
@@ -25,15 +25,14 @@ function love.load()
     window_width, window_height = love.window.getMode()
 
     -- Get font
-    love.graphics.newFont("assets/fonts/CrimsonText-Bold.ttf")
+    crimson = love.graphics.newFont("assets/fonts/CrimsonText-Bold.ttf")
+    love.graphics.setFont(crimson)
 
     -- Camera table
     camera = {
         x = 0,
         y = 0
     }
-    
-    
     
     -- Initialize grid
     grid_init()
@@ -98,27 +97,4 @@ function screen_shake(intensity)
     -- Moves camera randomly
     camera.x = love.math.random(-intensity, intensity)
     camera.y = love.math.random(-intensity, intensity)
-end
-
-
-
--- Calculate distance between two positions
-function distance(x1, y1, x2, y2)
-    return math.sqrt((x2 - x1) ^ 2 + (y2 - y1) ^ 2)
-end
-
-
-
--- Finds out if a value is in a table
-function isInTable(value, table)
-    for i = 1, #table do
-
-        local this_value = table[i]
-        if value == this_value then
-            return true
-        end
-
-    end
-    return false
-
 end
