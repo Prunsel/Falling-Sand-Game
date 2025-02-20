@@ -6,7 +6,7 @@ anim8 = require "libraries.anim8"
 moonshine = require "libraries.moonshine"
 
 -- Require scripts
-sandfall = require "scripts.element_handler"
+sandfall = require "scripts.sandfall"
 
 -- Removes sprite blur
 love.graphics.setDefaultFilter("nearest", "nearest")
@@ -19,7 +19,7 @@ love.graphics.setDefaultFilter("nearest", "nearest")
 function love.load()
 
     -- Set window dimensions
-    --love.window.setMode(600, 400)
+    love.window.setMode(600, 400)
 
     -- Get window dimensions
     window_width, window_height = love.window.getMode()

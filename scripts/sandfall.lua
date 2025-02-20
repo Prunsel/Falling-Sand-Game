@@ -32,8 +32,6 @@ function grid_init()
             grid[i][j] = {
                 x = (i - 1) * cell_size, 
                 y = (j - 1) * cell_size,
-                xv = 0,
-                yv = 0,
                 checked = false,
                 isFalling = true,
                 lifetime = 0
@@ -52,7 +50,7 @@ function grid_init()
     -- Cell neighbours
     down = 0
     down_left = 0
-    down_right = 07
+    down_right = 0
     left = 0
     right = 0
     up = 0
@@ -96,7 +94,8 @@ function grid_update(dt)
                 this_cell = grid[x][y]
 
                 -- Get cell neighbours
-                if this_cell.element.properties.name ~= "wall" or this_cell.checked then    
+                if this_cell.element.properties.name ~= "wall"then
+                    
                     down = grid[x][y + 1]
                     down_left = grid[x - 1][y + 1]
                     down_right = grid[x + 1][y + 1]
@@ -105,10 +104,18 @@ function grid_update(dt)
                     up = grid[x][y - 1]
                     up_left = grid[x - 1][y - 1]
                     up_right = grid[x + 1][y - 1]
+                    
+
                 end
+
                 -- Update cell
-                this_cell.element.update(this_cell)
+                --this_cell.element.update(this_cell, neighbours)
+                cell = this_cell
+                if cell.element.properties.name == "sand" then
+                    sand.update(cell)
+                end
                 this_cell.checked = true
+
                 -- Drawing and erasing
                 if this_cell.element.properties.name ~= "wall" and draw_mode == "pixel" then -- Pixel drawing
                     if isTouchingMouse(this_cell.x, this_cell.y) then
@@ -131,9 +138,7 @@ function grid_update(dt)
                     end
 
                 end
-
                 
-
                 -- Increase lifetime
                 this_cell.lifetime = this_cell.lifetime + 1
 
@@ -318,12 +323,12 @@ end
 
 -- Swap cells
 function swapCells(cell1, cell2)
-    local new_properties = cell2.properties
+    local new_element = cell2.element
 
-    cell2.properties = cell1.properties
+    cell2.element = cell1.element
     cell2.checked = true
     cell2.lifetime = cell1.lifetime
-    cell1.properties = new_properties
+    cell1.element= new_element
     cell1.checked = true
     cell1.lifetime = cell2.lifetime
     
