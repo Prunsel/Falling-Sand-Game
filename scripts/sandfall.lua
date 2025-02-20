@@ -69,12 +69,52 @@ function grid_init()
     -- Counter to update simulation everytime it reaches the simulation speed
     simulation_count = 0
 
+    -- Draw mode
+    draw_mode = "brush"
+    draw_mode_swap = false
+
+    -- Default brush radius
+    brush_radius = 5
+
+    -- Mouse table
+    mouse = {
+        x = 0,
+        y = 0,
+        left = false,
+        right = false,
+        middle = false
+    }
+
 end
 
 
 
 -- Update grid
 function grid_update(dt)
+
+    -- Pausing
+    if love.keyboard.isDown("p") then
+        paused = true
+    elseif love.keyboard.isDown("o") then
+        paused = false
+    end
+
+    -- Mouse update
+    mouse.x, mouse.y = love.mouse.getPosition()
+    mouse.left = love.mouse.isDown(1)
+    mouse.right = love.mouse.isDown(2)
+    mouse.middle = love.mouse.isDown(3)
+
+    -- Swap drawing brush
+    if love.keyboard.isDown("q") then
+        draw_mode = "pixel" -- Pixel draw
+
+    elseif love.keyboard.isDown("e") then
+        draw_mode = "brush" -- Brush draw
+
+    end
+
+    -- Update 
     if simulation_count >= simulation_speed then
         -- Reset camera
         camera.x, camera.y = 0, 0

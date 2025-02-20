@@ -33,27 +33,13 @@ function love.load()
         y = 0
     }
     
-    -- Mouse table
-    mouse = {
-        x = 0,
-        y = 0,
-        left = false,
-        right = false,
-        middle = false
-    }
+    
     
     -- Initialize grid
     grid_init()
     
     -- FPS Variable
     fps = 0
-
-    -- Draw mode
-    draw_mode = "brush"
-    draw_mode_swap = false
-
-    -- Default brush radius
-    brush_radius = 5
 
     -- Backgrounds
     backgrounds = {
@@ -71,59 +57,7 @@ function love.update(dt)
     -- Get FPS
     fps = love.timer.getFPS()
     
-    -- Mouse update
-    mouse.x, mouse.y = love.mouse.getPosition()
-    mouse.left = love.mouse.isDown(1)
-    mouse.right = love.mouse.isDown(2)
-    mouse.middle = love.mouse.isDown(3)
-
-    -- Swap drawing brush
-    if love.keyboard.isDown("q") then
-        draw_mode = "pixel" -- Pixel draw
-
-    elseif love.keyboard.isDown("e") then
-        draw_mode = "brush" -- Brush draw
-
-    end
     
-    -- Change selected material
-    if love.keyboard.isDown("1") then
-        material = element.sand
-
-    elseif love.keyboard.isDown("2") then
-        material = element.indestructible
-
-    elseif love.keyboard.isDown("3") then
-        material = element.water
-
-    elseif love.keyboard.isDown("4") then
-        material = element.acid
-
-    elseif love.keyboard.isDown("5") then
-        material = element.acid_gas
-
-    elseif love.keyboard.isDown("6") then
-        material = element.soil
-
-    elseif love.keyboard.isDown("7") then
-        material = element.stone
-
-    elseif love.keyboard.isDown("8") then
-        material = element.steam
-
-    elseif love.keyboard.isDown("9") then
-        material = element.lava
-
-    end
-
-    -- Pausing
-    if love.keyboard.isDown("p") then
-        paused = true
-    elseif love.keyboard.isDown("o") then
-        paused = false
-    end
-
-
     -- Grid update
     grid_update(dt)
 
@@ -151,7 +85,7 @@ function love.draw()
 
     -- Displaey FPS
     love.graphics.print("FPS: " .. fps, 3, 3)
-    
+
 end -----------------------------------------------------------------------
 
 
