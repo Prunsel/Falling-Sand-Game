@@ -6,6 +6,7 @@ sand = {
         name  = "sand",
         colour = {r = 1, g = 0.9, b = 0.5, a = 1},
         noise = true,
+        check = true,
         density = 1,
         corrosive_res = 0.2,
         integrity = 0.3

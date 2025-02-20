@@ -144,10 +144,14 @@ function love.draw()
     grid_draw()
 
     -- Display if the game is paused or not
+    love.graphics.setColor(1, 1, 1)
     if paused then
         love.graphics.print("Paused", window_width / 2 - 25, 3)
     end
 
+    -- Displaey FPS
+    love.graphics.print("FPS: " .. fps, 3, 3)
+    
 end -----------------------------------------------------------------------
 
 

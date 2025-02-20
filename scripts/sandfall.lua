@@ -111,10 +111,10 @@ function grid_update(dt)
                 -- Update cell
                 --this_cell.element.update(this_cell, neighbours)
                 cell = this_cell
-                if cell.element.properties.name == "sand" then
-                    sand.update(cell)
+                if cell.element.properties.check then
+                    cell.element.update(cell)
                 end
-                this_cell.checked = true
+                
 
                 -- Drawing and erasing
                 if this_cell.element.properties.name ~= "wall" and draw_mode == "pixel" then -- Pixel drawing
