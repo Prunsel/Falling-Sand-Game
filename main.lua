@@ -6,8 +6,7 @@ anim8 = require "libraries.anim8"
 moonshine = require "libraries.moonshine"
 
 -- Require scripts
-player = require "scripts.player"
-sand = require "scripts.element_handler"
+sandfall = require "scripts.element_handler"
 
 -- Removes sprite blur
 love.graphics.setDefaultFilter("nearest", "nearest")
@@ -139,23 +138,10 @@ function love.draw()
     love.graphics.translate(camera.x, camera.y)
 
     -- Draw background
-    love.graphics.draw(backgrounds.cave, 0, 0, 0, window_width / backgrounds.cave:getWidth(), window_height / backgrounds.cave:getHeight())
+    love.graphics.draw(backgrounds.test, 0, 0, 0, window_width / backgrounds.cave:getWidth(), window_height / backgrounds.cave:getHeight())
 
     -- Draw grid
     grid_draw()
-
-    -- Display selected material
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.print("Material : "..material.name, 5, 3)
-
-    -- Display the simulation speed
-    love.graphics.print("Simulation speed : "..simulation_speed, 5, 18)
-
-    -- Display FPS
-    love.graphics.print("Current FPS : "..fps, 5, 33)
-
-    -- Display draw mode
-    love.graphics.print("Draw mode : "..draw_mode, 5, 48)
 
     -- Display if the game is paused or not
     if paused then
@@ -163,32 +149,6 @@ function love.draw()
     end
 
 end -----------------------------------------------------------------------
-
-
-
-
-
-
-
--- Detect mouse on cells
-function isTouchingMouse(x, y)
-    if mouse.x >= x and mouse.x <= x + cell_size and mouse.y >= y and mouse.y <= y + cell_size then
-        return true
-    else
-        return false
-    end
-end
-
-
-
--- Detect mouse distance to cell
-function isNearMouse(x, y)
-    if distance(mouse.x, mouse.y, x + cell_size / 2, y + cell_size / 2) <= brush_radius * cell_size then
-        return true
-    else
-        return false
-    end
-end
 
 
 

@@ -1,6 +1,6 @@
 
 -- Handles elements
-sand = {}
+sandfall = {}
 
 -- Load grid and variables
 function grid_init()
@@ -10,10 +10,10 @@ function grid_init()
     
     -- Elements
     element = {
-        empty = {name  = "empty", colour = {r = 0, g = 0, b = 0}, physics = "void", density = 0.3, corrosive_res = 1},
+        empty = require "elements.other.empty",
         indestructible = {name  = "indestructible", colour = {r = 0.2, g = 0.2, b = 0.2}, physics = "static", density = 9, corrosive_res = 1},
-        wall = {name  = "wall", colour = {r = 0.1, g= 0.1, b= 0.1}, physics = "static", density = 8, corrosive_res = 1},
-        sand = {name  = "sand", colour = {r = 1, g = 0.9, b = 0.5, a = 1}, noise = true, physics = "powder", density = 1, corrosive_res = 0.2, integrity = 0.3},
+        wall = require "elements.other.wall",
+        sand = require "elements/powders/sand",
         water = {name = "water", colour = {r = 0.15, g = 0.7, b = 0.8, a = 0.3}, physics = "liquid", density = 0.5, corrosive_res = 0.1, gas = "steam"},
         steam = {name = "steam", colour = {r = 0.15, g = 0.7, b = 0.8, a = 0.1}, physics = "gas", density = 0.1, corrosive_res = 0.1, liquid = "water", condense_time = 5000},
         acid = {name = "acid", colour = {r = 0, g = 0.8, b = 0, a = 0.4}, physics = "liquid", density = 0.4, corrosive_res = 1, corrosiveness = 0.4, gas = "acid_gas"},
@@ -41,9 +41,9 @@ function grid_init()
 
             -- If cell is at the edge it becomes the wall element and if it is not then become empty
             if grid[i][j].x == 0 or grid[i][j].x == window_width - cell_size or grid[i][j].y == 0 or grid[i][j].y == window_height - cell_size then
-                grid[i][j].properties = element.wall
+                grid[i][j].element = element.wall
             else
-                grid[i][j].properties = element.empty
+                grid[i][j].element = element.empty
             end
             
         end
@@ -78,7 +78,7 @@ end
 -- Update grid
 function grid_update(dt)
     if simulation_count >= simulation_speed then
-            -- Reset camera
+        -- Reset camera
         camera.x, camera.y = 0, 0
 
         -- Uncheck all cells
@@ -95,8 +95,8 @@ function grid_update(dt)
                 -- Get current cell
                 this_cell = grid[x][y]
 
-                -- Get cell neighboursx
-                if this_cell.properties.name ~= "wall" or this_cell.checked then    
+                -- Get cell neighbours
+                if this_cell.element.properties.name ~= "wall" or this_cell.checked then    
                     down = grid[x][y + 1]
                     down_left = grid[x - 1][y + 1]
                     down_right = grid[x + 1][y + 1]
@@ -106,34 +106,36 @@ function grid_update(dt)
                     up_left = grid[x - 1][y - 1]
                     up_right = grid[x + 1][y - 1]
                 end
-
+                -- Update cell
+                this_cell.element.update(this_cell)
+                this_cell.checked = true
                 -- Drawing and erasing
-                if this_cell.properties.name ~= "wall" and draw_mode == "pixel" then -- Pixel drawing
+                if this_cell.element.properties.name ~= "wall" and draw_mode == "pixel" then -- Pixel drawing
                     if isTouchingMouse(this_cell.x, this_cell.y) then
                         if mouse.left then
-                            this_cell.properties = material
+                            this_cell.element = material
                         elseif mouse.right then
-                            this_cell.properties = element.empty
+                            this_cell.element = element.empty
                             this_cell.checked = true
                         end
                     end
 
-                elseif this_cell.properties.name ~= "wall" and draw_mode == "brush" then -- Brush drawing (Circle)
+                elseif this_cell.element.properties.name ~= "wall" and draw_mode == "brush" then -- Brush drawing (Circle)
                     if isNearMouse(this_cell.x, this_cell.y) then
                         if mouse.left then
-                            this_cell.properties = material
+                            this_cell.element = material
                         elseif mouse.right then
-                            this_cell.properties = element.empty
+                            this_cell.element = element.empty
                             this_cell.checked = true
                         end
                     end
 
                 end
 
-                -- Cell update
-                if not this_cell.checked and not paused then
-                    cellUpdate(this_cell)
-                end
+                
+
+                -- Increase lifetime
+                this_cell.lifetime = this_cell.lifetime + 1
 
             end
             
@@ -149,6 +151,8 @@ function grid_update(dt)
     
 end --------------------------------------------------------------------------------------
 
+
+
 -- Draws grid
 function grid_draw()
 
@@ -158,18 +162,18 @@ function grid_draw()
             local cell = grid[i][j]
             
             -- Set cell color with noise for sand
-            if cell.properties.noise then
+            if cell.element.properties.noise then
                 local noise = love.math.noise(cell.x * 0.1, cell.y * 0.1)
-                local r = cell.properties.colour.r * (0.9 + 0.1 * noise)
-                local g = cell.properties.colour.g * (0.9 + 0.1 * noise)
-                local b = cell.properties.colour.b * (0.9 + 0.1 * noise)
-                love.graphics.setColor(r, g, b, cell.properties.colour.a)
+                local r = cell.element.properties.colour.r * (0.9 + 0.1 * noise)
+                local g = cell.element.properties.colour.g * (0.9 + 0.1 * noise)
+                local b = cell.element.properties.colour.b * (0.9 + 0.1 * noise)
+                love.graphics.setColor(r, g, b, cell.element.properties.colour.a)
             else
-                love.graphics.setColor(cell.properties.colour.r, cell.properties.colour.g, cell.properties.colour.b, cell.properties.colour.a)
+                love.graphics.setColor(cell.element.properties.colour.r, cell.element.properties.colour.g, cell.element.properties.colour.b, cell.element.properties.colour.a)
             end
             
             -- Draw cell
-            if cell.properties.name ~= "empty" then
+            if cell.element.properties.name ~= "empty" then
                 love.graphics.rectangle("fill", cell.x, cell.y, cell_size, cell_size)
             end
 
@@ -177,22 +181,6 @@ function grid_draw()
     end
 
 end ----------------------------------------------------------------------------------
-
--- Element Behaviours
-function cellUpdate(cell)
-
-    if cell.properties.physics == "powder" then
-        powder(cell)
-        cell.lifetime = cell.lifetime + 1
-    elseif cell.properties.physics == "liquid" then
-        liquid(cell)
-        cell.lifetime = cell.lifetime + 1
-    elseif cell.properties.physics == "gas" then
-        gas(cell)
-        cell.lifetime = cell.lifetime + 1
-    end
-
-end ----------------------------------------------------------------------------------------------
 
 
 
@@ -358,6 +346,26 @@ function replaceCells(cell1, cell2, byproduct)
         cell1.lifetime = 0
     end
     cell1.checked = true
+end
+
+-- Detect mouse on cells
+function isTouchingMouse(x, y)
+    if mouse.x >= x and mouse.x <= x + cell_size and mouse.y >= y and mouse.y <= y + cell_size then
+        return true
+    else
+        return false
+    end
+end
+
+
+
+-- Detect mouse distance to cell
+function isNearMouse(x, y)
+    if distance(mouse.x, mouse.y, x + cell_size / 2, y + cell_size / 2) <= brush_radius * cell_size then
+        return true
+    else
+        return false
+    end
 end
 
 return sand
