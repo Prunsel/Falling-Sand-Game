@@ -4,9 +4,7 @@
 -- Require libraries
 anim8 = require "libraries.anim8"
 moonshine = require "libraries.moonshine"
-
--- Require scripts
-sandfall = require "libraries.sandfall.sandfall"
+world = require "scripts.world.material_manager"
 
 -- Removes sprite blur
 love.graphics.setDefaultFilter("nearest", "nearest")
@@ -19,7 +17,7 @@ love.graphics.setDefaultFilter("nearest", "nearest")
 function love.load()
 
     -- Set window dimensions
-    love.window.setMode(600, 400)
+    love.window.setFullscreen(true)
 
     -- Get window dimensions
     window_width, window_height = love.window.getMode()
@@ -36,7 +34,7 @@ function love.load()
     }
     
     -- Initialize grid
-    grid_init()
+    grid_init() 
     
     -- FPS Variable
     fps = 0
@@ -57,9 +55,30 @@ function love.update(dt)
     -- Get FPS
     fps = love.timer.getFPS()
     
-    
     -- Grid update
     grid_update(dt)
+
+    -- Camera speed
+    if love.keyboard.isDown("lshift") then
+        cam.speed = 5
+    else
+        cam.speed = 2
+    end
+
+    -- Camera movement
+    if love.keyboard.isDown("w") then
+        cam.y = cam.y + cam.speed
+    end
+    if love.keyboard.isDown("s") then
+        cam.y = cam.y - cam.speed
+    end
+    if love.keyboard.isDown("d") then
+        cam.x = cam.x - cam.speed
+    end
+    if love.keyboard.isDown("a") then
+        cam.x = cam.x + cam.speed
+    end
+    camera.x, camera.y = cam.x, cam.y
 
 end ----------------------------------------------------------------------
 
@@ -70,32 +89,22 @@ function love.draw()
 
     -- Translate coordinates
     love.graphics.translate(camera.x, camera.y)
-
-    -- Draw background
-    love.graphics.draw(backgrounds.test, 0, 0, 0, window_width / backgrounds.cave:getWidth(), window_height / backgrounds.cave:getHeight())
-
+    
     -- Draw grid
     grid_draw()
 
     -- Display if the game is paused or not
     love.graphics.setColor(1, 1, 1)
     if paused then
-        love.graphics.print("Paused", window_width / 2 - 25, 3)
+        love.graphics.print("Paused", window_width / 2 - 25 - camera.x, 3 - camera.y)
     end
 
-    -- Displaey FPS
-    love.graphics.print("FPS: " .. fps, 3, 3)
+    -- Display FPS
+    love.graphics.print("FPS: " .. fps, 3 - camera.x, 3 - camera.y)
+    
+    -- Display selected material
+    love.graphics.print("Material: " ..material.properties.name, 3 - camera.x, 15 - camera.y)
 
 end -----------------------------------------------------------------------
 
 
-
--- Screen shake
-function screen_shake(intensity)
-    -- Resets camera
-    camera.x, camera.y = 0, 0
-
-    -- Moves camera randomly
-    camera.x = love.math.random(-intensity, intensity)
-    camera.y = love.math.random(-intensity, intensity)
-end

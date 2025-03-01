@@ -1,53 +1,56 @@
-
 -- Handles elements
-sandfall = {}
+world = {}
 
 -- Load grid and variables
 function grid_init()
-
     -- Get window dimensions
     window_width, window_height = love.window.getMode()
     
     -- Grid of cells
     grid = {}
     cell_size = 8
-    
+    water_height = 2
+
     -- Elements
     element = { -- Add elements here  \/ Filepaths \/ 
-        empty = require "libraries.sandfall.elements.other.empty",
-        wall = require "libraries.sandfall.elements.other.wall",
-        sand = require "libraries.sandfall.elements.powders.sand",
-        --indestructible = {name  = "indestructible", colour = {r = 0.2, g = 0.2, b = 0.2}, physics = "static", density = 9, corrosive_res = 1},
-        --water = {name = "water", colour = {r = 0.15, g = 0.7, b = 0.8, a = 0.3}, physics = "liquid", density = 0.5, corrosive_res = 0.1, gas = "steam"},
-        --steam = {name = "steam", colour = {r = 0.15, g = 0.7, b = 0.8, a = 0.1}, physics = "gas", density = 0.1, corrosive_res = 0.1, liquid = "water", condense_time = 5000},
-        --acid = {name = "acid", colour = {r = 0, g = 0.8, b = 0, a = 0.4}, physics = "liquid", density = 0.4, corrosive_res = 1, corrosiveness = 0.4, gas = "acid_gas"},
-        --acid_gas = {name = "acid_gas", colour = {r = 0, g = 0.8, b = 0, a = 0.1}, physics = "gas", density = 0.1, corrosive_res = 1, corrosiveness = 0.4, liquid = "acid", condense_time = 6000},
-        --soil = {name = "soil", colour = {r = 0.45, g = 0.25, b = 0, a = 1}, noise = true, physics = "powder", density = 1.2, corrosive_res = 0.2, integrity = 0.5},
-        --stone = {name = "stone", colour = {r = 0.3, g = 0.3, b = 0.3, a = 1}, noise = true, physics = "static", density = 10, corrosive_res = 0.35, liquid = "lava"},
-	    --lava = {name = "lava", colour = {r = 1, g = 0.4, b = 0, a = 1}, physics = "liquid", density = 4, corrosive_res = 10, corrosiveness = 0.02, solid = "stone", solidify_time = 600}
+        empty = require "scripts.world.elements.other.empty",
+        wall = require "scripts.world.elements.other.wall",
+        water = require "scripts.world.elements.liquids.water",
+        stone = require "scripts.world.elements.solids.stone",
+        indestructible = require "scripts.world.elements.solids.indestructible",
+        player = require "scripts.player",
+        acid = require "scripts.world.elements.liquids.acid",
+        sand = require "scripts.world.elements.powders.sand"
     }
+    
+    -- Initialize grid
+    local grid_width = 200
+    local grid_height = 500
 
-    -- Initalize grid
-    for i = -1, window_width / cell_size do
+    for i = 0, grid_width do
         grid[i] = {}
-        for j = -1, window_height / cell_size do
-
-            -- Makes cell
+        for j = 0, grid_height do
+            -- Makes cell 
             grid[i][j] = {
-                x = (i - 1) * cell_size, 
-                y = (j - 1) * cell_size,
+                x = i * cell_size, 
+                y = j * cell_size,
                 checked = false,
                 isFalling = true,
                 lifetime = 0
             }
 
             -- If cell is at the edge it becomes the wall element and if it is not then become empty
-            if grid[i][j].x == 0 or grid[i][j].x == window_width - cell_size or grid[i][j].y == 0 or grid[i][j].y == window_height - cell_size then
+            if i == 0 or i == grid_width or j == 0 or j == grid_height then
                 grid[i][j].element = element.wall
+            elseif love.math.noise(grid[i][j].x * 0.001, grid[i][j].y * 0.001) - 0.1 > 0.5 then
+                grid[i][j].element = element.stone
+            elseif grid[i][j].y < (water_height) * cell_size then
+                grid[i][j].element = element.water
+            elseif grid[i][j].y == water_height * cell_size and love.math.random() > 0.4 then
+                grid[i][j].element = element.water
             else
                 grid[i][j].element = element.empty
             end
-            
         end
     end
 
@@ -70,7 +73,7 @@ function grid_init()
     -- Default simulation speed
     simulation_speed = 0.01
 
-    -- Counter to update simulation everytime it reaches the simulation speed
+    -- Counter to update simulation every time it reaches the simulation speed
     simulation_count = 0
 
     -- Draw mode
@@ -89,13 +92,17 @@ function grid_init()
         middle = false
     }
 
+    -- Another camera table
+    cam = {}
+    cam.x, cam.y = 0, 0
+
+    -- Pixel sprite
+    pixel = love.graphics.newImage("assets/sprites/pixel.png")
+    
 end
-
-
 
 -- Update grid
 function grid_update(dt)
-
     -- Pausing
     if love.keyboard.isDown("p") then
         paused = true
@@ -104,7 +111,8 @@ function grid_update(dt)
     end
 
     -- Mouse update
-    mouse.x, mouse.y = love.mouse.getPosition()
+    mouse.x = love.mouse.getX() - camera.x
+    mouse.y = love.mouse.getY() - camera.y
     mouse.left = love.mouse.isDown(1)
     mouse.right = love.mouse.isDown(2)
     mouse.middle = love.mouse.isDown(3)
@@ -112,10 +120,23 @@ function grid_update(dt)
     -- Swap drawing brush
     if love.keyboard.isDown("q") then
         draw_mode = "pixel" -- Pixel draw
-
     elseif love.keyboard.isDown("e") then
         draw_mode = "brush" -- Brush draw
+    end
 
+    -- Element swap
+    if love.keyboard.isDown("1") then
+        material = element.sand
+    elseif love.keyboard.isDown("2") then
+        material = element.indestructible
+    elseif love.keyboard.isDown("3") then
+        material = element.stone
+    elseif love.keyboard.isDown("4") then
+        material = element.water
+    elseif love.keyboard.isDown("5") then
+        material = element.acid
+    elseif love.keyboard.isDown("6") then
+        material = element.player
     end
 
     -- Update 
@@ -124,22 +145,20 @@ function grid_update(dt)
         camera.x, camera.y = 0, 0
 
         -- Uncheck all cells
-        for x = 1, window_width / cell_size do
-            for y = 1, window_height / cell_size do
+        for x = 1, #grid do
+            for y = 1, #grid[1] do
                 grid[x][y].checked = false
             end
         end
 
         -- Update cells
-        for x = 1, window_width / cell_size do
-            for y = window_height / cell_size, 1, -1 do
-
+        for x = 1, #grid do
+            for y = #grid[1], 1, -1 do
                 -- Get current cell
-                this_cell = grid[x][y]
+                local this_cell = grid[x][y]
 
                 -- Get cell neighbours
-                if this_cell.element.properties.name ~= "wall"then
-                    
+                if this_cell.element.properties.name ~= "wall" then
                     down = grid[x][y + 1]
                     down_left = grid[x - 1][y + 1]
                     down_right = grid[x + 1][y + 1]
@@ -148,21 +167,23 @@ function grid_update(dt)
                     up = grid[x][y - 1]
                     up_left = grid[x - 1][y - 1]
                     up_right = grid[x + 1][y - 1]
-                    
-
                 end
 
                 -- Update cell
-                --this_cell.element.update(this_cell, neighbours)
-                cell = this_cell
-                if cell.element.properties.check then
-                    cell.element.update(cell)
+                if (not this_cell.checked) and (not paused) and (this_cell.element.properties.check) then
+                    this_cell.element.update(this_cell, grid, x, y)
                 end
-                
 
                 -- Drawing and erasing
-                if this_cell.element.properties.name ~= "wall" and draw_mode == "pixel" then -- Pixel drawing
-                    if isTouchingMouse(this_cell.x, this_cell.y) then
+                if this_cell.element.properties.name ~= "wall" then
+                    if draw_mode == "pixel" and isTouchingMouse(this_cell.x, this_cell.y) then
+                        if mouse.left then
+                            this_cell.element = material
+                        elseif mouse.right then
+                            this_cell.element = element.empty
+                            this_cell.checked = true
+                        end
+                    elseif draw_mode == "brush" and isNearMouse(this_cell.x, this_cell.y) then
                         if mouse.left then
                             this_cell.element = material
                         elseif mouse.right then
@@ -170,66 +191,49 @@ function grid_update(dt)
                             this_cell.checked = true
                         end
                     end
-
-                elseif this_cell.element.properties.name ~= "wall" and draw_mode == "brush" then -- Brush drawing (Circle)
-                    if isNearMouse(this_cell.x, this_cell.y) then
-                        if mouse.left then
-                            this_cell.element = material
-                        elseif mouse.right then
-                            this_cell.element = element.empty
-                            this_cell.checked = true
-                        end
-                    end
-
                 end
-                
+
                 -- Increase lifetime
                 this_cell.lifetime = this_cell.lifetime + 1
-
             end
-            
         end
-        
+
         -- Reset simulation counter
-        simulation_count = simulation_count - simulation_speed 
-            
-    end -----------------------------------------------------------------------------------
+        simulation_count = simulation_count - simulation_speed
+    end
 
     -- Simulation count increment
     simulation_count = simulation_count + dt
-    
-end --------------------------------------------------------------------------------------
-
-
+end
 
 -- Draws grid
 function grid_draw()
 
-    for i = 1, window_width / cell_size do
-        for j = 1, window_height / cell_size do
-
+    for i = 0, #grid do
+        for j = 0, #grid[1] do
             local cell = grid[i][j]
             
-            -- Set cell color with noise for sand
-            if cell.element.properties.noise then
-                local noise = love.math.noise(cell.x * 0.1, cell.y * 0.1)
-                local r = cell.element.properties.colour.r * (0.9 + 0.1 * noise)
-                local g = cell.element.properties.colour.g * (0.9 + 0.1 * noise)
-                local b = cell.element.properties.colour.b * (0.9 + 0.1 * noise)
-                love.graphics.setColor(r, g, b, cell.element.properties.colour.a)
-            else
-                love.graphics.setColor(cell.element.properties.colour.r, cell.element.properties.colour.g, cell.element.properties.colour.b, cell.element.properties.colour.a)
+            -- Check if the cell is within the visible area
+            if cell.x >= -camera.x - cell_size and cell.x <= -camera.x + window_width + cell_size and cell.y >= -camera.y - cell_size and cell.y <= -camera.y + window_height + cell_size then
+                if cell.element.properties.noise then
+                    local noise = love.math.noise(cell.x * 0.1, cell.y * 0.1)
+                    local r = cell.element.properties.colour.r * (0.9 + 0.1 * noise)
+                    local g = cell.element.properties.colour.g * (0.9 + 0.1 * noise)
+                    local b = cell.element.properties.colour.b * (0.9 + 0.1 * noise)
+                    love.graphics.setColor(r, g, b, cell.element.properties.colour.a)
+                else
+                    love.graphics.setColor(cell.element.properties.colour.r, cell.element.properties.colour.g, cell.element.properties.colour.b, cell.element.properties.colour.a)
+                end
+                
+                -- Add cell to sprite batch
+                if cell.element.properties.name ~= "empty" then
+                    love.graphics.rectangle("fill", cell.x, cell.y, cell_size, cell_size)
+                end
             end
-            
-            -- Draw cell
-            if cell.element.properties.name ~= "empty" then
-                love.graphics.rectangle("fill", cell.x, cell.y, cell_size, cell_size)
-            end
-
         end
     end
 
-end ----------------------------------------------------------------------------------
+end
 
 
 
@@ -347,7 +351,7 @@ end ----------------------------------------------------------------------------
 
 -- Corrosion check
 function corrodeCheck(cell, cell2)
-    if cell.properties.corrosiveness and love.math.random(0, 100) < (cell.properties.corrosiveness * 100) - (cell2.properties.corrosive_res * 100) then
+    if cell.element.properties.corrosiveness and love.math.random(0, 100) < (cell.element.properties.corrosiveness * 100) - (cell2.element.properties.corrosive_res * 100) then
         return true
     else
         return false
@@ -372,6 +376,7 @@ function swapCells(cell1, cell2)
     cell2.element = cell1.element
     cell2.checked = true
     cell2.lifetime = cell1.lifetime
+    
     cell1.element= new_element
     cell1.checked = true
     cell1.lifetime = cell2.lifetime
@@ -381,20 +386,16 @@ end
 
 
 -- Replace cell
-function replaceCells(cell1, cell2, byproduct)
-    local new_properties = cell2.properties
+function replaceCells(cell1, cell2)
+    local new_element = cell2.element
 
-    cell2.properties = element.empty
+    cell2.element = element.empty
     cell2.lifetime = 0
     cell2.checked = true
-    if byproduct then
-        cell1.properties = element[byproduct]
-        cell1.lifetime = 0
-    else
-        cell1.properties = element.empty
-        cell1.lifetime = 0
-    end
+    cell1.element = element.empty
+    cell1.lifetime = 0
     cell1.checked = true
+    
 end
 
 -- Detect mouse on cells
@@ -422,5 +423,14 @@ function distance(x1, y1, x2, y2)
     return math.sqrt((x2 - x1) ^ 2 + (y2 - y1) ^ 2)
 end
 
+-- Screen shake
+function screen_shake(intensity)
+    -- Resets camera
+    camera.x, camera.y = 0, 0
 
-return sand
+    -- Moves camera randomly
+    camera.x = love.math.random(-intensity, intensity)
+    camera.y = love.math.random(-intensity, intensity)
+end
+
+return world

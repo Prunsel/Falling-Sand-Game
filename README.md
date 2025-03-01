@@ -3,4 +3,4 @@ A falling sand game I'm working on which I hope to expand on in the future, insp
 
 I am using the SandFall library which created myself. 
 
-Planning to add an SCP-style facility which a currently non-existent player can roam through and fully destroy.
+Planning to add an SCP-style facility which the player can roam through and fully destroy.
