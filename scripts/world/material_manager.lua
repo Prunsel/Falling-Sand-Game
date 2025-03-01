@@ -1,3 +1,7 @@
+
+-- Require behaviours
+require "scripts.world.elements.behaviours"
+
 -- Handles elements
 world = {}
 
@@ -8,8 +12,8 @@ function grid_init()
     
     -- Grid of cells
     grid = {}
-    cell_size = 8
-    water_height = 2
+    cell_size = 10
+    water_height = 100
 
     -- Elements
     element = { -- Add elements here  \/ Filepaths \/ 
@@ -17,15 +21,22 @@ function grid_init()
         wall = require "scripts.world.elements.other.wall",
         water = require "scripts.world.elements.liquids.water",
         stone = require "scripts.world.elements.solids.stone",
+        compressed_stone = require "scripts.world.elements.solids.compressed_stone",
         indestructible = require "scripts.world.elements.solids.indestructible",
         player = require "scripts.player",
         acid = require "scripts.world.elements.liquids.acid",
-        sand = require "scripts.world.elements.powders.sand"
+        acid_gas = require "scripts.world.elements.gases.acid_gas",
+        sand = require "scripts.world.elements.powders.sand",
+        fire = require "scripts.world.elements.gases.fire",
+        smoke = require "scripts.world.elements.gases.smoke"
     }
     
+    -- World seed
+    seed = love.math.random(0, 100000)
+
     -- Initialize grid
-    local grid_width = 200
-    local grid_height = 500
+    local grid_width = 300
+    local grid_height = 300
 
     for i = 0, grid_width do
         grid[i] = {}
@@ -39,20 +50,39 @@ function grid_init()
                 lifetime = 0
             }
 
-            -- If cell is at the edge it becomes the wall element and if it is not then become empty
+            -- World generation
             if i == 0 or i == grid_width or j == 0 or j == grid_height then
                 grid[i][j].element = element.wall
-            elseif love.math.noise(grid[i][j].x * 0.001, grid[i][j].y * 0.001) - 0.1 > 0.5 then
-                grid[i][j].element = element.stone
-            elseif grid[i][j].y < (water_height) * cell_size then
-                grid[i][j].element = element.water
-            elseif grid[i][j].y == water_height * cell_size and love.math.random() > 0.4 then
-                grid[i][j].element = element.water
             else
-                grid[i][j].element = element.empty
+                local noise_value = 0
+                local frequency = 0.001
+                local amplitude = 0.6
+                local persistence = 0.6
+                local octaves = 4
+
+                for o = 1, octaves do
+                    noise_value = noise_value + love.math.noise(seed, grid[i][j].x * frequency, grid[i][j].y * frequency) * amplitude
+                    frequency = frequency * 1.6
+                    amplitude = amplitude * persistence
+                end
+
+                if noise_value > 0.7 then
+                    grid[i][j].element = element.compressed_stone
+                elseif noise_value > 0.64 then
+                    grid[i][j].element = element.stone
+                elseif grid[i][j].y > (grid_height - water_height) * cell_size then
+                    grid[i][j].element = element.water
+                elseif grid[i][j].y == (grid_height - water_height) * cell_size and love.math.random() > 0.4 then
+                    grid[i][j].element = element.water
+                else
+                    grid[i][j].element = element.empty
+                end
             end
         end
     end
+
+    -- Post-processing step to remove small isolated bits of stone
+    clean_up_stone(grid, grid_width, grid_height)
 
     -- Cell neighbours
     down = 0
@@ -95,10 +125,44 @@ function grid_init()
     -- Another camera table
     cam = {}
     cam.x, cam.y = 0, 0
-
-    -- Pixel sprite
-    pixel = love.graphics.newImage("assets/sprites/pixel.png")
     
+end
+
+-- Count neighboring stone cells
+function count_neighboring_stone(grid, x, y)
+    local count = 0
+    local neighbors = {
+        {x = x - 1, y = y - 1},
+        {x = x, y = y - 1},
+        {x = x + 1, y = y - 1},
+        {x = x - 1, y = y},
+        {x = x + 1, y = y},
+        {x = x - 1, y = y + 1},
+        {x = x, y = y + 1},
+        {x = x + 1, y = y + 1}
+    }
+
+    for _, neighbor in ipairs(neighbors) do
+        if grid[neighbor.x] and grid[neighbor.x][neighbor.y] and (grid[neighbor.x][neighbor.y].element == element.stone or grid[neighbor.x][neighbor.y].element == element.compressed_stone) then
+            count = count + 1
+        end
+    end
+
+    return count
+end
+
+-- Clean up small isolated bits of stone
+function clean_up_stone(grid, grid_width, grid_height)
+    for i = 1, grid_width - 1 do
+        for j = 1, grid_height - 1 do
+            if grid[i][j].element == element.stone or grid[i][j].element == element.compressed_stone then
+                local neighboring_stone_count = count_neighboring_stone(grid, i, j)
+                if neighboring_stone_count < 4 then
+                    grid[i][j].element = element.empty
+                end
+            end
+        end
+    end
 end
 
 -- Update grid
@@ -137,6 +201,10 @@ function grid_update(dt)
         material = element.acid
     elseif love.keyboard.isDown("6") then
         material = element.player
+    elseif love.keyboard.isDown("7") then
+        material = element.acid_gas
+    elseif love.keyboard.isDown("8") then
+        material = element.fire
     end
 
     -- Update 
@@ -220,134 +288,44 @@ function grid_draw()
                     local r = cell.element.properties.colour.r * (0.9 + 0.1 * noise)
                     local g = cell.element.properties.colour.g * (0.9 + 0.1 * noise)
                     local b = cell.element.properties.colour.b * (0.9 + 0.1 * noise)
+
                     love.graphics.setColor(r, g, b, cell.element.properties.colour.a)
+
+                elseif cell.element.properties.noise_chaos then
+                    local noise = love.math.noise(cell.x * love.math.random(), cell.y * love.math.random())
+                    local r, g, b
+
+                    if noise < 0.5 then
+                        r = 1.0
+                        g = noise * 2.0
+                        b = 0.0
+                    else
+                        r = 1.0
+                        g = 1.0
+                        b = (noise - 0.5) * 1.5
+                    end
+
+                    local brightness = 0.5 + 0.5 * noise
+                    r = r * brightness
+                    g = g * brightness
+                    b = b * brightness
+
+                    love.graphics.setColor(r, g, b, cell.element.properties.colour.a)
+
                 else
+
                     love.graphics.setColor(cell.element.properties.colour.r, cell.element.properties.colour.g, cell.element.properties.colour.b, cell.element.properties.colour.a)
                 end
                 
-                -- Add cell to sprite batch
                 if cell.element.properties.name ~= "empty" then
                     love.graphics.rectangle("fill", cell.x, cell.y, cell_size, cell_size)
                 end
+
             end
         end
     end
 
 end
-
-
-
--- Powder behaviour
-function powder(cell)
-
-    if cell.properties.density > down.properties.density and down.checked == false and down.properties.physics ~= "static" then
-        swapCells(cell, down) -- Falling
-
-    elseif love.math.random(0, 100) > cell.properties.integrity * 100 and cell.isFalling and cell.properties.density > down_left.properties.density and cell.properties.density > left.properties.density then
-        swapCells(cell, down_left) -- Diagonal left movement
-
-    elseif love.math.random(0, 100) > cell.properties.integrity * 100 and cell.isFalling and cell.properties.density > down_right.properties.density and cell.properties.density > right.properties.density then
-        swapCells(cell, down_right) -- Diangonal right movement
-
-    end
-
-end ---------------------------------------------------------------------------------------------
-
-
-
--- Liquid behaviour
-function liquid(cell)
-    
-    if corrodeCheck(cell, down) then -- Corroding
-        replaceCells(cell, down, cell.properties.gas)
-        screen_shake(1)
-    elseif cell.properties.density > down.properties.density and down.properties.physics ~= "static" and not down.checked then -- Falling
-        swapCells(cell, down)
-
-    else -- Moving left and right
-
-        local goLeft = love.math.random(0, 1) -- Randomly picks whether or not the cell goes left or right
-
-        if goLeft == 1 then -- Left
-
-            if corrodeCheck(cell, left) then
-                replaceCells(cell, left, cell.properties.gas)
-                screen_shake(1)
-            elseif cell.properties.density > left.properties.density and not left.checked then
-                swapCells(cell, left)
-                
-            end
-                
-            
-        elseif goLeft == 0 then -- Right
-            
-            if corrodeCheck(cell, right) then
-                replaceCells(cell, right, cell.properties.gas)
-                screen_shake(1)
-            elseif cell.properties.density > right.properties.density and not right.checked then
-                swapCells(cell, right)
-                
-            end
-                
-            
-        end
-
-    end
-
-    -- Solidifying
-    if cell.properties.solidify_time and cell.lifetime >= cell.properties.solidify_time then
-        setCell(cell, cell.properties.solid)
-    end
-
-end ---------------------------------------------------------------------------------------------------------------------------------
-
-
-
--- Gas behaviour
-function gas(cell)
-
-    if corrodeCheck(cell, up) then -- Corroding
-        replaceCells(cell, up)
-        screen_shake(1)
-    elseif cell.properties.density < up.properties.density and up.properties.physics ~= "static" and not up.checked then -- Rising
-        swapCells(cell, up)
-
-    else -- Moving left and right
-
-        local goLeft = love.math.random(0, 1) -- Randomly picks whether or not the cell goes left or right
-
-        if goLeft == 1 then -- Left
-
-            if corrodeCheck(cell, left) then
-                replaceCells(cell, left)
-                screen_shake(1)
-            elseif cell.properties.density < left.properties.density and left.properties.name == "empty" then
-                swapCells(cell, left)
-                
-            end
-            
-        elseif goLeft == 0 then -- Right
-            
-            if corrodeCheck(cell, right) then
-                replaceCells(cell, right)
-                screen_shake(1)
-            elseif cell.properties.density < right.properties.density and right.properties.name == "empty" then
-                swapCells(cell, right)
-                
-            end
-            
-        end
-
-    end
-
-    -- Condensing
-    if cell.properties.condense_time and cell.lifetime >= cell.properties.condense_time then
-        setCell(cell, cell.properties.liquid)
-    end
-
-end ---------------------------------------------------------------------------------------------------------------------------------
-
-
 
 -- Corrosion check
 function corrodeCheck(cell, cell2)
@@ -360,9 +338,23 @@ end
 
 
 
+-- Cell reaction
+function reactCells(cell1, cell2, product)
+    
+    cell1.element = element[product]
+    cell1.checked = true
+    cell1.lifetime = 0
+
+    cell2.element = empty
+    cell2.checked = true
+    cell2.lifetime = 0
+end
+
+
+
 -- Set cell
-function setCell(cell, element_name)
-    cell.properties = element[element_name]
+function setCell(cell, element)
+    cell.element = element
     cell.checked = true
     cell.lifetime = 0
 end
@@ -377,7 +369,7 @@ function swapCells(cell1, cell2)
     cell2.checked = true
     cell2.lifetime = cell1.lifetime
     
-    cell1.element= new_element
+    cell1.element = new_element
     cell1.checked = true
     cell1.lifetime = cell2.lifetime
     
@@ -397,6 +389,69 @@ function replaceCells(cell1, cell2)
     cell1.checked = true
     
 end
+
+-- Freeze check
+function freezeCheck(cell)
+    if up.element.properties.freeze then
+        return true
+    elseif up_left.element.properties.freeze then
+        return true
+    elseif up_right.element.properties.freeze then
+        return true
+    elseif left.element.properties.freeze then
+        return true
+    elseif right.element.properties.freeze then
+        return true
+    elseif down.element.properties.freeze then
+        return true
+    elseif down_left.element.properties.freeze then
+        return true
+    elseif down_right.element.properties.freeze then
+        return true
+    else
+        return false
+    end
+end
+
+-- Condense cell
+function condense(cell)
+    setCell(cell, cell.element.properties.liquid)
+end
+
+-- Melt cell
+function melt(cell)
+    setCell(cell, cell.element.properties.liquid)
+end
+
+-- Solidify cell
+function solidify(cell)
+    setCell(cell, cell.element.properties.solid)
+end
+
+-- Burn check
+function burnCheck(cell)
+    if up.element.properties.burn then
+        return true
+    elseif up_left.element.properties.burn then
+        return true
+    elseif up_right.element.properties.burn then
+        return true
+    elseif left.element.properties.burn then
+        return true
+    elseif right.element.properties.burn then
+        return true
+    elseif down.element.properties.burn then
+        return true
+    elseif down_left.element.properties.burn then
+        return true
+    elseif down_right.element.properties.burn then
+        return true
+    else
+        return false
+    end
+end
+
+
 
 -- Detect mouse on cells
 function isTouchingMouse(x, y)

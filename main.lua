@@ -60,9 +60,9 @@ function love.update(dt)
 
     -- Camera speed
     if love.keyboard.isDown("lshift") then
-        cam.speed = 5
+        cam.speed = 11
     else
-        cam.speed = 2
+        cam.speed = 5
     end
 
     -- Camera movement

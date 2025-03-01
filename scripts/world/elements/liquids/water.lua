@@ -8,7 +8,7 @@ water = {
         colour = {r = 0.25, g = 0.68, b = 0.85, a = 0.4},
         check = true,
         type = "liquid",
-        density = 0.5,
+        density = 1,
         corrosive_res = 0.2,
         dispersion_rate = 20,
     },
