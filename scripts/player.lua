@@ -11,26 +11,26 @@ player = {
 
     update = function(cell)
 
-        if up.element.properties.type ~= "solid" and love.keyboard.isDown("w") then -- Flying
-            if love.keyboard.isDown("d") and up_right.element.properties.type ~= "solid" then
+        if up.element.properties.type ~= "solid" and love.keyboard.isDown("up") then -- Flying
+            if love.keyboard.isDown("right") and up_right.element.properties.type ~= "solid" then
                 swapCells(cell, up_right)
-            elseif love.keyboard.isDown("a") and up_left.element.properties.type ~= "solid" then
+            elseif love.keyboard.isDown("left") and up_left.element.properties.type ~= "solid" then
                 swapCells(cell, up_left)
             else
                 swapCells(cell, up)
             end 
         
         elseif down.element.properties.type ~= "solid" then -- Falling
-            if love.keyboard.isDown("d") and down_right.element.properties.type ~= "solid" then
+            if love.keyboard.isDown("right") and down_right.element.properties.type ~= "solid" then
                 swapCells(cell, down_right)
-            elseif love.keyboard.isDown("a") and down_left.element.properties.type ~= "solid" then
+            elseif love.keyboard.isDown("left") and down_left.element.properties.type ~= "solid" then
                 swapCells(cell, down_left)
             else
                 swapCells(cell, down)
             end 
 
         else -- Moving left and right
-            if love.keyboard.isDown("d") then 
+            if love.keyboard.isDown("right") then 
                 if right.element.properties.type ~= "solid" then
                     swapCells(cell, right)
                 elseif up_right.element.properties.type ~= "solid" and up.element.properties.type ~= "solid" then
@@ -38,7 +38,7 @@ player = {
                 end
 
             end
-            if love.keyboard.isDown("a") then
+            if love.keyboard.isDown("left") then
                 if left.element.properties.type ~= "solid" then
                     swapCells(cell, left)
                 elseif up_left.element.properties.type ~= "solid" and up.element.properties.type ~= "solid" then

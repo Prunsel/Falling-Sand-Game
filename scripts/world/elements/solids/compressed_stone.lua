@@ -10,7 +10,10 @@ stone = {
         density = 10,
         corrosive_res = 0.4
     },
-
+    
+    update = function(cell)
+        solid(cell)
+    end
 }
 
 return stone

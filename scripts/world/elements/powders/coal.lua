@@ -1,14 +1,15 @@
--- Sand
-sand = {
+-- coal
+coal = {
     properties = {
-        name  = "sand", 
-        colour = {r = 1, g = 0.9, b = 0.5, a = 1},
+        name  = "coal", 
+        colour = {r = 0.1, g = 0.1, b = 0.1, a = 1},
         noise = true,
         check = true,
         type = "solid",
         density = 2,
         corrosive_res = 0.3,
-        integrity = 0.4
+        integrity = 0.9,
+        flammability = 0.15
     },
 
     update = function(cell)
@@ -16,4 +17,4 @@ sand = {
     end
 }
 
-return sand
+return coal

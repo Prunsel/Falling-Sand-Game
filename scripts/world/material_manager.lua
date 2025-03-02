@@ -12,8 +12,8 @@ function grid_init()
     
     -- Grid of cells
     grid = {}
-    cell_size = 10
-    water_height = 100
+    cell_size = 15
+    water_height = 50
 
     -- Elements
     element = { -- Add elements here  \/ Filepaths \/ 
@@ -27,16 +27,23 @@ function grid_init()
         acid = require "scripts.world.elements.liquids.acid",
         acid_gas = require "scripts.world.elements.gases.acid_gas",
         sand = require "scripts.world.elements.powders.sand",
-        fire = require "scripts.world.elements.gases.fire",
-        smoke = require "scripts.world.elements.gases.smoke"
+        fire = require "scripts.world.elements.other.fire",
+        smoke = require "scripts.world.elements.gases.smoke",
+        steam = require "scripts.world.elements.gases.steam",
+        wood = require "scripts.world.elements.solids.wood",
+        ash = require "scripts.world.elements.powders.ash",
+        coal = require "scripts.world.elements.powders.coal",
+        glass = require "scripts.world.elements.solids.glass",
+        oil = require "scripts.world.elements.liquids.oil",
+        gas = require "scripts.world.elements.gases.gas"
     }
     
     -- World seed
     seed = love.math.random(0, 100000)
 
     -- Initialize grid
-    local grid_width = 300
-    local grid_height = 300
+    grid_width = 300
+    grid_height = 250
 
     for i = 0, grid_width do
         grid[i] = {}
@@ -192,7 +199,7 @@ function grid_update(dt)
     if love.keyboard.isDown("1") then
         material = element.sand
     elseif love.keyboard.isDown("2") then
-        material = element.indestructible
+        material = element.oil
     elseif love.keyboard.isDown("3") then
         material = element.stone
     elseif love.keyboard.isDown("4") then
@@ -200,11 +207,15 @@ function grid_update(dt)
     elseif love.keyboard.isDown("5") then
         material = element.acid
     elseif love.keyboard.isDown("6") then
-        material = element.player
+        material = element.gas
     elseif love.keyboard.isDown("7") then
-        material = element.acid_gas
+        material = element.coal
     elseif love.keyboard.isDown("8") then
         material = element.fire
+    elseif love.keyboard.isDown("9") then
+        material = element.glass
+    elseif love.keyboard.isDown("0") then
+        material = element.wood
     end
 
     -- Update 
@@ -345,7 +356,7 @@ function reactCells(cell1, cell2, product)
     cell1.checked = true
     cell1.lifetime = 0
 
-    cell2.element = empty
+    cell2.element = element.empty
     cell2.checked = true
     cell2.lifetime = 0
 end
@@ -353,8 +364,8 @@ end
 
 
 -- Set cell
-function setCell(cell, element)
-    cell.element = element
+function setCell(cell, element_name)
+    cell.element = element[element_name]
     cell.checked = true
     cell.lifetime = 0
 end
@@ -428,8 +439,13 @@ function solidify(cell)
     setCell(cell, cell.element.properties.solid)
 end
 
+-- Evaporate cell
+function evaporate(cell)
+    setCell(cell, cell.element.properties.gas)
+end
+
 -- Burn check
-function burnCheck(cell)
+function burnCheck()
     if up.element.properties.burn then
         return true
     elseif up_left.element.properties.burn then
@@ -451,7 +467,26 @@ function burnCheck(cell)
     end
 end
 
-
+-- Check what neighbour is burning
+function whichBurn()
+    if up.element.properties.burn then
+        return up
+    elseif up_left.element.properties.burn then
+        return up_left
+    elseif up_right.element.properties.burn then
+        return up_right
+    elseif left.element.properties.burn then
+        return left
+    elseif right.element.properties.burn then
+        return right
+    elseif down.element.properties.burn then
+        return down
+    elseif down_left.element.properties.burn then
+        return down_left
+    elseif down_right.element.properties.burn then
+        return down_right
+    end
+end
 
 -- Detect mouse on cells
 function isTouchingMouse(x, y)

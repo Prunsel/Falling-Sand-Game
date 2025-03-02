@@ -11,14 +11,11 @@ acid = {
         density = 0.9,
         corrosive_res = 1,
         corrosiveness = 0.5,
-        gas = acid_gas
+        gas = "acid_gas"
     },
     
-    
     update = function(cell)
-
-        
-
+        liquid(cell)
     end,
     
 }

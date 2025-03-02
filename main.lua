@@ -43,7 +43,11 @@ function love.load()
     backgrounds = {
         cave = love.graphics.newImage("assets/sprites/backgrounds/cave.png"),
         test = love.graphics.newImage("assets/sprites/backgrounds/test.png"),
+        checkerboard = love.graphics.newImage("assets/sprites/backgrounds/checkerboard.png")
     }
+
+    -- Variable to check if mouse was already clicked
+    clicked = false
 
 end ----------------------------------------------------------------------
 
@@ -78,8 +82,13 @@ function love.update(dt)
     if love.keyboard.isDown("a") then
         cam.x = cam.x + cam.speed
     end
-    camera.x, camera.y = cam.x, cam.y
 
+    -- Clamp camera position to ensure it doesn't go off the grid
+    cam.x = math.max(math.min(cam.x, 0), -grid_width * cell_size + window_width - cell_size)
+    cam.y = math.max(math.min(cam.y, 0), -grid_height * cell_size + window_height - cell_size)
+
+    camera.x, camera.y = cam.x, cam.y
+    
 end ----------------------------------------------------------------------
 
 
@@ -90,6 +99,9 @@ function love.draw()
     -- Translate coordinates
     love.graphics.translate(camera.x, camera.y)
     
+    -- Draw Background
+    love.graphics.draw(backgrounds.checkerboard, -100, -100, 0, 250, 250)
+
     -- Draw grid
     grid_draw()
 
@@ -108,3 +120,15 @@ function love.draw()
 end -----------------------------------------------------------------------
 
 
+-- Mouse click detection (Only once)
+function mouseClick(button)
+    if not love.mouse.isDown(button) then
+        clicked = false
+    end
+    if love.mouse.isDown(button) and not clicked then
+        clicked = true
+        return true
+    else
+        return false
+    end
+end
